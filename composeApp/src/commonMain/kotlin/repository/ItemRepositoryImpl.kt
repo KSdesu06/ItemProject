@@ -6,21 +6,23 @@ import model.Item
 
 class ItemRepositoryImpl(private val database: Database) : ItemRepository {
 
+    private val dbQueries = database.itemQueries
+
     override suspend fun getAllItems(): List<Item> {
-        return database.itemQueries.selectAll().executeAsList().map { it.toItem() }
+        return dbQueries.selectAll().executeAsList().map { it.toItem() }
     }
 
     override suspend fun insertItem(item: Item) {
-        database.itemQueries.insertItem(name = item.name, description = item.description)
+        dbQueries.insertItem(name = item.name, description = item.description)
     }
 
     override suspend fun updateItem(item: Item) {
-        item.id?.let { database.itemQueries.updateItem(id = it, name = item.name, description = item.description) }
+        item.id?.let { dbQueries.updateItem(id = it, name = item.name, description = item.description) }
     }
 
     override suspend fun deleteItem(id: Long?) {
         if (id != null) {
-            database.itemQueries.deleteItem(id)
+            dbQueries.deleteItem(id)
         }
     }
 

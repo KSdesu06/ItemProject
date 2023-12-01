@@ -1,4 +1,4 @@
-/*
+package screen/*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.FloatingActionButton
@@ -56,13 +56,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import model.Item
-import repository.ItemRepository
 import viewmodel.ItemViewModel
 
 @Composable
 fun ItemsScreen(viewModel: ItemViewModel) {
     val items by viewModel.items.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<Item?>(null) }
 
     Scaffold(
         topBar = {
@@ -74,9 +74,28 @@ fun ItemsScreen(viewModel: ItemViewModel) {
             }
         }
     ) {
+
+        if (editingItem != null) {
+            ItemEditDialog(
+                item = editingItem!!,
+                onDismiss = { editingItem = null },
+                onConfirm = { updatedItem ->
+                    viewModel.updateItem(updatedItem)
+                    editingItem = null
+                }
+            )
+        }
+
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(items) { item ->
-                ItemRow(item)
+                ItemRow(
+                    item = item,
+                    onItemSelected = { /* จัดการเมื่อ item ถูกเลือก */ },
+                    onEditClicked = { editingItem = it },
+                    onDeleteClicked = {
+                        viewModel.deleteItem(item.id)
+                    }
+                )
             }
         }
     }
@@ -90,6 +109,7 @@ fun ItemsScreen(viewModel: ItemViewModel) {
     }
 }
 
+/*
 @Composable
 fun ItemRow(item: Item) {
     Card(
@@ -107,6 +127,7 @@ fun ItemRow(item: Item) {
         }
     }
 }
+*/
 
 @Composable
 fun ItemInputDialog(onDismiss: () -> Unit, onAddItem: (String, String) -> Unit) {
@@ -118,8 +139,16 @@ fun ItemInputDialog(onDismiss: () -> Unit, onAddItem: (String, String) -> Unit) 
         title = { Text("Add New Item") },
         text = {
             Column {
-                TextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-                TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") }
+                )
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") }
+                )
             }
         },
         confirmButton = {
@@ -134,5 +163,53 @@ fun ItemInputDialog(onDismiss: () -> Unit, onAddItem: (String, String) -> Unit) 
         }
     )
 }
+
+@Composable
+fun ItemEditDialog(
+    item: Item,
+    onDismiss: () -> Unit,
+    onConfirm: (Item) -> Unit,
+) {
+    var name by remember { mutableStateOf(item.name) }
+    var description by remember { mutableStateOf(item.description ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Item") },
+        text = {
+            Column {
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") }
+                )
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                onConfirm(
+                    Item(
+                        id = item.id,
+                        name = name,
+                        description = description
+                    )
+                )
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 
 
